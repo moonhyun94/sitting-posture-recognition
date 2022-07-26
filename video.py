@@ -43,8 +43,14 @@ def capture_video(conn, e, cam_num, WIDTH, HEIGHT, FPS, action, subject):
                 
             cv.imshow('frame', frame)
             
-            # add pause key?
-            if cv.waitKey(1) == ord('q'):
+            # pause resume quit
+            key = cv.waitKey(1)
+            
+            if key == ord('p'):
+                conn.send('p')
+            if key == ord('r'):
+                conn.send('r')
+            if key == ord('q'):
                 conn.send('q')
                 break
     finally:
