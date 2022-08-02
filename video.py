@@ -1,6 +1,8 @@
 import cv2 as cv
+import os
 from datetime import datetime
 
+save_path = 'data'
 
 def open_cam(cam_num, W, H):
     cap = cv.VideoCapture(cam_num)
@@ -20,9 +22,16 @@ def capture_video(conn, e, cam_num, WIDTH, HEIGHT, FPS, action, subject):
     
     cap = open_cam(cam_num, WIDTH, HEIGHT)
     ts, ac, sb = datetime.strftime(datetime.now(), "%Y-%m-%d %H-%M-%S"), action, subject
+    record_date = datetime.strftime(datetime.now(), "%Y-%m-%d")
     
-    video = save(f'data/video/{ts}_{ac}_{sb}.mp4', WIDTH, HEIGHT, FPS)
-    timeout = open(f'data/video/{ts}_{ac}_{sb}_timestamp.txt', mode='w')
+    if not os.path.exists(os.path.join(save_path, record_date)):
+        os.mkdir(os.path.join(save_path, record_date))
+
+    if not os.path.exists(os.path.join(save_path, record_date, 'video')):
+        os.mkdir(os.path.join(save_path, record_date, 'video'))
+        
+    video = save(os.path.join(save_path, record_date, 'video', f'{ts}_{ac}_{sb}.mp4', WIDTH, HEIGHT, FPS))
+    timeout = open(os.path.join(save_path, record_date, 'video', f'{ts}_{ac}_{sb}_timestamp.txt'), mode='w')
     
     print('video capture open, Waiting for e ... ')
     

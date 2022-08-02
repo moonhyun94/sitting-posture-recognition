@@ -1,11 +1,8 @@
 import serial
 from datetime import datetime
-import cv2 as cv
+
 BAUDRATE = 921600
-MEHTOD = ['euler', 'quaternion']
-# Camera Window Size
-WIDTH = 640
-HEIGHT = 480
+save_path = 'data'
 
 def openSerial(port, baudrate=BAUDRATE, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=None, xonxoff=False, rtscts=False, dsrdtr=False):
     ser = serial.Serial()
@@ -39,10 +36,17 @@ def capture_sensor(conn, e, e2, action, subject):
     conn.send('Ready')
     conn.close()
     
-    ts = datetime.strftime(datetime.now(), "%Y-%m-%d %H-%M-%S")
-    ac = action
-    sb = subject
-    output = open(f'data/sensor/{ts}_{ac}_{sb}.txt', mode='w')
+    ts, ac, sb = datetime.strftime(datetime.now(), "%Y-%m-%d %H-%M-%S"), ac, sb
+    record_date = datetime.strftime(datetime.now(), "%Y-%m-%d")
+    
+    if not os.path.exists(os.path.join(save_path, record_date)):
+        os.mkdir(os.path.join(save_path, record_date))
+        
+    if not os.path.exists(os.path.join(save_path, record_date, 'sensor')):
+        os.mkdir(os.path.join(save_path, record_date, 'sensor'))
+        
+    output = open(os.path.join(save_path, record_date, 'sensor', f'{ts}_{ac}_{sb}.txt'), mode='w')
+    
     data = []
     
     try:
@@ -58,4 +62,3 @@ def capture_sensor(conn, e, e2, action, subject):
     finally:
         ser.close()
         output.close()
-        
