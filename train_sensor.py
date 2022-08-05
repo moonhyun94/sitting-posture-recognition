@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from dataloader import CustomDataset
-from model import C3D
+from Sensor.sensor_loader import CustomDataset
+from Sensor_C3D.sensor_C3D import C3D
 
 from tqdm import tqdm
 import os
@@ -44,7 +44,7 @@ def train(dataloader, model, loss, optimizer):
     train_loss /= num_batches
     correct /= size
 
-    print(f'loss: {train_loss:>7f}\n Train Accuracy : {(100*correct):>8f}')
+    print(f'loss: {train_loss:>4f}\n Train Accuracy : {(100*correct):>4f}')
 
 def test(dataloader, model, loss):
     size = len(dataloader.dataset)
@@ -66,7 +66,7 @@ def test(dataloader, model, loss):
     test_loss /= num_batches
     correct /= size
 
-    print(f'Test Accuracy : {(100*correct):>0.1f}%, Avg loss : {test_loss:>8f} \n')
+    print(f'Test Accuracy : {(100*correct):>0.1f}%, Avg loss : {test_loss:>5f} \n')
 
 if __name__=="__main__":
 
@@ -84,7 +84,7 @@ if __name__=="__main__":
     optimizer = torch.optim.SGD(my_model.parameters(), lr=LEARNING_RATE)
 
     for epoch in tqdm(range(EPOCHS)):
-        print(f'Epoch : {epoch+1} \n--------------------------------')
+        print(f'\n Epoch : {epoch+1} \n--------------------------------')
 
         train(train_dataloader, my_model, loss_fn, optimizer)
         test(test_dataloader, my_model, loss_fn)
