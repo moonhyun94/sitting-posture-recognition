@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from sensor_loader import CustomDataset
-from sensor_C3D import C3D
+from dataloader.sensor_loader import CustomDataset
+from models.sensor_C3D import C3D
 
 from tqdm import tqdm
 import os
