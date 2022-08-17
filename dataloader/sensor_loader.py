@@ -38,6 +38,7 @@ class CustomDataset(Dataset):
         #self.transform = transforms.ToTensor()
 
         for name in pathlib.Path(f'./sensor_img_b/{mode}/').glob('*.jpg'):
+                        
             category = os.path.splitext(name)[0].split('\\')[2]
   
             self.label.append(category)
