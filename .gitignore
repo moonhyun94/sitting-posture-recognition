@@ -3,3 +3,8 @@
 weights/
 wandb/
 */__pycache__/*
+sensor_img_b/
+sensor_img_s/
+video_img_b/
+*.pth
+__MACOSX/

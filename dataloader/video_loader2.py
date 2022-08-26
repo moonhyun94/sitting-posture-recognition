@@ -1,5 +1,4 @@
 import os
-from sklearn.model_selection import train_test_split
 
 import torch
 from torchvision import transforms
@@ -25,8 +24,9 @@ class VideoDataset(Dataset):
 
     def __init__(self, dataset='video', split='train', clip_len=30, preprocess=False):
         # original video data path, preprocessed video data path
-        self.root_dir, self.output_dir = '/data/moon/datasets/sitting-posture-recognition/dataset', '/data/moon/datasets/sitting-posture-recognition/dataset'
-        folder = os.path.join('/data/moon/datasets/sitting-posture-recognition/dataset', split) # 'train', 'test'
+        self.root_dir, self.output_dir = './video_img_b', './video_img_b'
+        folder = os.path.join('./video_img_b', split) # 'train', 'test'
+        # folder = './video_img_b/train'
         self.clip_len = clip_len
         self.split = split
         

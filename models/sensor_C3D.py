@@ -23,13 +23,14 @@ class C3D(nn.Module):
 
         self.conv5a = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 0, 0))
         self.conv5b = nn.Conv3d(512, 512, kernel_size=(3, 3, 3), padding=(1, 0, 0))
-        self.pool5 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(1, 3, 3), padding=(1, 1, 1))
+        # self.pool5 = nn.MaxPool3d(kernel_size=(2, 2, 2), stride=(1, 3, 3), padding=(1, 1, 1))
+        self.adaptpool = nn.AdaptiveAvgPool3d(output_size=(3,3,3)) # 512,3,3,3
 
-        self.fc6 = nn.Linear(124416, 4096)
-        self.fc7 = nn.Linear(4096, 4096)
-        self.fc8 = nn.Linear(4096, num_classes)
+        self.fc6 = nn.Linear(512*3*3*3, 4096)
+        self.fc7 = nn.Linear(4096, 1024)
+        self.fc8 = nn.Linear(1024, num_classes)
 
-        self.dropout = nn.Dropout(p=0.5)
+        # self.dropout = nn.Dropout(p=0.5)
 
         self.relu = nn.ReLU()
 
@@ -56,16 +57,17 @@ class C3D(nn.Module):
         # print(x.shape)
         x = self.relu(self.conv5a(x))
         x = self.relu(self.conv5b(x))
-        x = self.pool5(x)
+        x = self.relu(self.adaptpool(x))
+        # x = self.pool5(x)
         # print(x.shape)
 
-        x = x.view(-1, 124416)
+        x = x.view(-1, x.shape[1]*x.shape[2]*x.shape[3]*x.shape[4])
         x = self.relu(self.fc6(x))
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = self.relu(self.fc7(x))
-        x = self.dropout(x)
-
+        # x = self.dropout(x)
         logits = self.fc8(x)
+        
         return logits
     
     def __load_pretrained_weights(self):
@@ -96,12 +98,12 @@ class C3D(nn.Module):
                          # Conv5b
                         "features.18.weight": "conv5b.weight",
                         "features.18.bias": "conv5b.bias",
-                        # # fc6
-                        # "classifier.0.weight": "fc6.weight",
-                        # "classifier.0.bias": "fc6.bias",
-                        # fc7
-                        "classifier.3.weight": "fc7.weight",
-                        "classifier.3.bias": "fc7.bias",
+                        # # # fc6
+                        # # "classifier.0.weight": "fc6.weight",
+                        # # "classifier.0.bias": "fc6.bias",
+                        # # fc7 
+                        # "classifier.3.weight": "fc7.weight",
+                        # "classifier.3.bias": "fc7.bias",
                         }
 
         p_dict = torch.load('./c3d-pretrained.pth')
