@@ -1,6 +1,4 @@
 import os
-from sklearn.model_selection import train_test_split
-
 import torch
 from torchvision import transforms
 import cv2
@@ -9,20 +7,8 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import random
 
-
 class VideoDataset(Dataset):
-    r"""A Dataset for a folder of videos. Expects the directory structure to be
-    directory->[train/val/test]->[class labels]->[videos]. Initializes with a list
-    of all file names, along with an array of labels, with label being automatically
-    inferred from the respective folder names.
-
-        Args:
-            dataset (str): Name of dataset. Defaults to 'ucf101'.
-            split (str): Determines which folder of the directory the dataset will read from. Defaults to 'train'.
-            clip_len (int): Determines how many frames are there in each clip. Defaults to 16.
-            preprocess (bool): Determines whether to preprocess dataset. Default is False.
-    """
-
+  
     def __init__(self, dataset='video', split='train', clip_len=30, preprocess=False):
         # original video data path, preprocessed video data path
         self.root_dir, self.output_dir = '/data/moon/datasets/sitting-posture-recognition/dataset', '/data/moon/datasets/sitting-posture-recognition/dataset'
@@ -68,16 +54,9 @@ class VideoDataset(Dataset):
         # Loading and preprocessing.
         buffer = self.load_frames(self.fnames[index])
         labels = np.array(self.label_array[index])
-        
-        # print(labels)
-        
-        # buffer = self.crop(buffer, self.clip_len, self.crop_size)
-        
+
         if self.split == 'train':
-            
-            # if np.random.rand() < 0.5:
-            #     buffer = self.randomflip(buffer)
-            
+
             if np.random.rand() < 0.5:
                 buffer = self.gaussian_noise(buffer)
                 
@@ -94,23 +73,10 @@ class VideoDataset(Dataset):
        
         return buffer, torch.from_numpy(labels)
 
-
-    def randomflip(self, buffer):
-        """Horizontally flip the given image and ground truth randomly with a probability of 0.5."""
-
-        if np.random.random() < 0.5:
-            for i, frame in enumerate(buffer):
-                frame = cv2.flip(buffer[i], flipCode=1)
-                buffer[i] = cv2.flip(frame, flipCode=1)
-
-        return buffer
-
-
     def normalize(self, buffer):
         for i, frame in enumerate(buffer):
             frame -= np.array([[[90.0, 98.0, 102.0]]])
             buffer[i] = frame
-
         return buffer
 
     def to_tensor(self, buffer):
@@ -128,7 +94,6 @@ class VideoDataset(Dataset):
             frame = cv2.resize(frame, (self.resize_width, self.resize_height))
 
             buffer[i] = frame
-
         return buffer
     
     def crop(self, buffer):
