@@ -8,8 +8,6 @@ import pathlib
 import os
 import glob
 
-# data.shape = (N, 3, 5, 224, 224)
-
 # hyperparameter
 INPUT_SIZE = 512
 FRAME = 5
@@ -35,7 +33,6 @@ class CustomDataset(Dataset):
             transforms.Resize([INPUT_SIZE, INPUT_SIZE]),
             transforms.ToTensor()
         ])
-        #self.transform = transforms.ToTensor()
 
         for name in pathlib.Path(f'./data/{mode}/').glob('*.jpg'):
             category = os.path.splitext(name)[0].split('/')[2]
@@ -43,8 +40,6 @@ class CustomDataset(Dataset):
 
             self.data.append((str(name), int(category[1])))
             self.data = sorted(self.data)
-
-
 
     def __len__(self):
         return len(self.data) // FRAME
@@ -66,5 +61,3 @@ class CustomDataset(Dataset):
         label = torch.tensor(self.data[idx*FRAME][1])
 
         return image_list, label
-
-    

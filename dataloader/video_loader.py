@@ -47,7 +47,9 @@ class VideoDataset(Dataset):
                     if os.path.isdir(os.path.join(folder, subject, action)):
                         for num in os.listdir(os.path.join(folder, subject, action)):
                             if os.path.isdir(os.path.join(folder, subject, action, num)):
-                                self.fnames.append(os.path.join(folder, subject, action, num)) # /data/moon/datasets/sitting-posture-recognition/dataset/train/마이쭈/A1
+                                if os.path.join(folder, subject, action, num) == '/data/moon/datasets/sitting-posture-recognition/dataset2/train/문현/A1/6':
+                                    continue
+                                self.fnames.append(os.path.join(folder, subject, action, num))
                                 labels.append(label)
 
         assert len(labels) == len(self.fnames)
@@ -72,8 +74,10 @@ class VideoDataset(Dataset):
         # buffer = self.crop(buffer, self.clip_len, self.crop_size)
         
         if self.split == 'train':
-            if np.random.rand() < 0.5:
-                buffer = self.randomflip(buffer)
+            
+            # if np.random.rand() < 0.5:
+            #     buffer = self.randomflip(buffer)
+            
             if np.random.rand() < 0.5:
                 buffer = self.gaussian_noise(buffer)
                 
@@ -87,7 +91,7 @@ class VideoDataset(Dataset):
             buffer = self.normalize(buffer)
             buffer = self.to_tensor(buffer)
             buffer = torch.from_numpy(buffer)
-
+       
         return buffer, torch.from_numpy(labels)
 
 

@@ -38,7 +38,7 @@ if __name__ == '__main__':
     args = get_args()
     experiment = None
     if args.wandb:
-        experiment = wandb.init(project=args.project_name, entity="moonhyun94", config={
+        experiment = wandb.init(project=args.project_name, entity="captcha-active-learning-jinro", config={
             "learning_rate": args.learning_rate,
             "epochs": args.epochs,
             "batch_size": args.batch_size,

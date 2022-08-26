@@ -141,7 +141,7 @@ def train_video(args, experiment, model, trainval_loaders, test_dataloader, trai
                     'state_dict': model.state_dict(),
                     'opt_dict': optimizer.state_dict(),
                 }, os.path.join(args.chkt_filename, 'C3D-video-epoch-' + str(args.epochs) + '.pth'))
-                print("Save model at {}\n".format(os.path.join(args.chkt_filename, '-video-epoch-' + str(args.epochs) + '.pth')))
+                print("Save model at {}\n".format(os.path.join(args.chkt_filename, 'C3D-video-epoch-' + str(args.epochs) + '.pth')))
    
     # Eval using Test set
     evaluate(args, experiment, model, test_dataloader, test_size, criterion)
