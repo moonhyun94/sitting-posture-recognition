@@ -6,7 +6,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from utils.data import CustomDataset
-from models.feature_extractor import FeatureExtractor
+from models.feature_extractor import ConvMixerFeatureExtractor
 from models.motion_classifier import MotionClassifier
 from sklearn.metrics import accuracy_score
 
@@ -19,12 +19,15 @@ def train_step(context, data):
 
     frames, sensors, labels = data
 
-    motion_pred_logits =  motion_classifier(frames, sensors)
-    loss = F.cross_entropy(motion_pred_logits, labels)
+    result =  motion_classifier(frames, sensors)
+    loss = 0.0
+    loss = loss + F.cross_entropy(result["logits"], labels)
+    loss = loss + F.cross_entropy(result["image_motion_logits"], labels)
+    loss = loss + F.cross_entropy(result["sensor_motion_logits"], labels)
     loss.backward()
     optimizer.step()
 
-    preds = motion_pred_logits.argmax(dim=1).detach().cpu().numpy()
+    preds = result["logits"].argmax(dim=1).detach().cpu().numpy()
     acc = accuracy_score(labels.detach().cpu().numpy(), preds)
 
     return loss, acc
@@ -36,10 +39,13 @@ def eval_step(context, data):
 
     frames, sensors, labels = data
 
-    motion_pred_logits =  motion_classifier(frames, sensors)
-    loss = F.cross_entropy(motion_pred_logits, labels)
+    result =  motion_classifier(frames, sensors)
+    loss = 0.0
+    loss = loss + F.cross_entropy(result["logits"], labels)
+    loss = loss + F.cross_entropy(result["image_motion_logits"], labels)
+    loss = loss + F.cross_entropy(result["sensor_motion_logits"], labels)
 
-    preds = motion_pred_logits.argmax(dim=1).cpu().numpy()
+    preds = result["logits"].argmax(dim=1).cpu().numpy()
     acc = accuracy_score(labels.cpu().numpy(), preds)
 
     return loss, acc
@@ -75,18 +81,19 @@ def train(args):
     train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=4)
     test_loader = DataLoader(testset, batch_size=args.batch_size, num_workers=4)
 
-    feature_extractor = FeatureExtractor().to(device).eval()
+    feature_extractor = ConvMixerFeatureExtractor().to(device).eval()
     # feature_extractor.requires_grad_(False)
 
     motion_classifier = MotionClassifier(feature_extractor).to(device)
     optimizer = optim.AdamW(motion_classifier.parameters(), lr=args.lr, weight_decay=0.1)
+    lr_scheduler = optim.lr_scheduler.GammaLR(optimizer, 0.1)
 
     context = {
         "motion_classifier": motion_classifier,
         "optimizer": optimizer
     }
 
-    motion_classifier.sensor_features.load_state_dict(torch.load("ckpts/sensor_features.pt"))
+    # motion_classifier.sensor_features.load_state_dict(torch.load("ckpts/sensor_features.pt"))
 
     min_test_loss = np.inf
 
@@ -127,7 +134,7 @@ def train(args):
 
         if min_test_loss > test_loss:
             min_test_loss = test_loss
-            save(context, "ckpts/motion_classifier_fusion.pt")
+            save(context, "ckpts/motion_classifier_20220829.pt")
 
 
 def parse_args():
