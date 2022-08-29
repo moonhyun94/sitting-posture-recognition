@@ -27,10 +27,15 @@ def train_step(context, data):
     loss.backward()
     optimizer.step()
 
-    preds = result["logits"].argmax(dim=1).detach().cpu().numpy()
-    acc = accuracy_score(labels.detach().cpu().numpy(), preds)
+    fusion_preds = result["logits"].argmax(dim=1).detach().cpu().numpy()
+    frame_preds = result["image_motion_logits"].argmax(dim=1).cpu().numpy()
+    sensor_preds = result["sensor_motion_logits"].argmax(dim=1).cpu().numpy()
 
-    return loss, acc
+    fusion_acc = accuracy_score(labels.cpu().numpy(), fusion_preds)
+    frame_acc = accuracy_score(labels.cpu().numpy(), frame_preds)
+    sensor_acc = accuracy_score(labels.cpu().numpy(), sensor_preds)
+
+    return loss, fusion_acc, frame_acc, sensor_acc
 
 
 @torch.no_grad()
@@ -45,10 +50,15 @@ def eval_step(context, data):
     loss = loss + F.cross_entropy(result["image_motion_logits"], labels)
     loss = loss + F.cross_entropy(result["sensor_motion_logits"], labels)
 
-    preds = result["logits"].argmax(dim=1).cpu().numpy()
-    acc = accuracy_score(labels.cpu().numpy(), preds)
+    fusion_preds = result["logits"].argmax(dim=1).detach().cpu().numpy()
+    frame_preds = result["image_motion_logits"].argmax(dim=1).cpu().numpy()
+    sensor_preds = result["sensor_motion_logits"].argmax(dim=1).cpu().numpy()
 
-    return loss, acc
+    fusion_acc = accuracy_score(labels.cpu().numpy(), fusion_preds)
+    frame_acc = accuracy_score(labels.cpu().numpy(), frame_preds)
+    sensor_acc = accuracy_score(labels.cpu().numpy(), sensor_preds)
+
+    return loss, fusion_acc, frame_acc, sensor_acc
 
 
 def save(context, path):
@@ -86,7 +96,6 @@ def train(args):
 
     motion_classifier = MotionClassifier(feature_extractor).to(device)
     optimizer = optim.AdamW(motion_classifier.parameters(), lr=args.lr, weight_decay=0.1)
-    lr_scheduler = optim.lr_scheduler.GammaLR(optimizer, 0.1)
 
     context = {
         "motion_classifier": motion_classifier,
@@ -97,12 +106,23 @@ def train(args):
 
     min_test_loss = np.inf
 
+    train_fusion_acc_list = []
+    train_frame_acc_list = []
+    train_sensor_acc_list = []
+    test_fusion_acc_list = []
+    test_frame_acc_list = []
+    test_sensor_acc_list = []
+
     for e in range(args.epochs):
         train_loss = 0.0
-        train_acc = 0.0
+        train_fusion_acc = 0.0
+        train_frame_acc = 0.0
+        train_sensor_acc = 0.0
 
         test_loss = 0.0
-        test_acc = 0.0
+        test_fusion_acc = 0.0
+        test_frame_acc = 0.0
+        test_sensor_acc = 0.0
 
         motion_classifier.train()
 
@@ -111,9 +131,11 @@ def train(args):
             sensors = sensors.to(device)
             labels = labels.long().to(device)
 
-            loss, acc = train_step(context, [frames, sensors, labels])
+            loss, fusion_acc, frame_acc, sensor_acc = train_step(context, [frames, sensors, labels])
             train_loss += loss / len(train_loader)
-            train_acc += acc / len(train_loader)
+            train_fusion_acc += fusion_acc / len(train_loader)
+            train_frame_acc += frame_acc / len(train_loader)
+            train_sensor_acc += sensor_acc / len(train_loader)
 
         motion_classifier.eval()
 
@@ -122,20 +144,52 @@ def train(args):
             sensors = sensors.to(device)
             labels = labels.long().to(device)
 
-            loss, acc = eval_step(context, [frames, sensors, labels])
+            loss, fusion_acc, frame_acc, sensor_acc = eval_step(context, [frames, sensors, labels])
             test_loss += loss / len(test_loader)
-            test_acc += acc / len(test_loader)
+            test_fusion_acc += fusion_acc / len(test_loader)
+            test_frame_acc += frame_acc / len(test_loader)
+            test_sensor_acc += sensor_acc / len(test_loader)
 
         print(f"Epochs {e + 1}/{args.epochs}")
         print(f"Train loss: {train_loss:.8f}")
         print(f"Test loss: {test_loss:.8f}")
-        print(f"Train acc: {train_acc:.8f}")
-        print(f"Test acc: {test_acc:.8f}")
+        print(f"Train fusion acc: {train_fusion_acc:.8f}")
+        print(f"Train frame acc: {train_frame_acc:.8f}")
+        print(f"Train sensor acc: {train_sensor_acc:.8f}")
+        print(f"Test fusion acc: {test_fusion_acc:.8f}")
+        print(f"Test frame acc: {test_frame_acc:.8f}")
+        print(f"Test sensor acc: {test_sensor_acc:.8f}")
+
+        train_fusion_acc_list.append(train_fusion_acc)
+        train_frame_acc_list.append(train_frame_acc)
+        train_sensor_acc_list.append(train_sensor_acc)
+        test_fusion_acc_list.append(test_fusion_acc)
+        test_frame_acc_list.append(test_frame_acc)
+        test_sensor_acc_list.append(test_sensor_acc)
 
         if min_test_loss > test_loss:
             min_test_loss = test_loss
-            save(context, "ckpts/motion_classifier_20220829.pt")
+            save(context, "ckpts/motion_classifier_20220829_2.pt")
 
+    train_acc = np.stack([
+        np.array(train_fusion_acc_list),
+        np.array(train_frame_acc_list),
+        np.array(train_sensor_acc_list)
+    ], axis=1)
+
+    test_acc = np.stack([
+        np.array(test_fusion_acc_list),
+        np.array(test_frame_acc_list),
+        np.array(test_sensor_acc_list)
+    ], axis=1)
+
+    with open("train_acc.csv", "w") as f:
+        for i in range(args.epochs):
+            f.write(f"{train_acc[i, 0]},{train_acc[i, 1]},{train_acc[i, 2]}\n")
+
+    with open("test_acc.csv", "w") as f:
+        for i in range(args.epochs):
+            f.write(f"{test_acc[i, 0]},{test_acc[i, 1]},{test_acc[i, 2]}\n")
 
 def parse_args():
     parser = argparse.ArgumentParser()
